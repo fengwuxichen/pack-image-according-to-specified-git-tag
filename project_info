@@ -1,0 +1,4 @@
+PROJECT_NAME|GIT_CLONE_ADDR|SCRIPT_FILE|PROJECT_DIR
+#e.g.
+api-adapter|ssh://git@ip:port/platform/api-adapter.git|docker.sh|api-adapter
+api-adapter-provider|ssh://git@ip:port/platform/api-adapter.git|dubbo_docker.sh|api-adapter-provider
