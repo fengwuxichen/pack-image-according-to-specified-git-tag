@@ -14,27 +14,30 @@ BASEPATH=$(cd `dirname $0`; pwd)
 GIT_CLONE_ADDR=`awk -F"|" '{if($1=="'${PROJECT_NAME}'") print$2}' project_info`
 SCRIPT_FILE=`awk -F"|" '{if($1=="'${PROJECT_NAME}'") print$3}' project_info`
 PROJECT_DIR=`awk -F"|" '{if($1=="'${PROJECT_NAME}'") print "'${PROJECT_NAME}'""/"$4}' project_info`
+echo;echo
 if [ X${GIT_CLONE_ADDR} == X"" -o X${SCRIPT_FILE} == X"" -o X${PROJECT_DIR} == X"" ];then
     echo "[ERROR] `date '+%Y-%m-%d %H:%M:%S'` - Failed to retrieve project ${PROJECT_NAME} in configuration file: project_info." >> ${BASEPATH}/build_result.log
     exit 1
 fi
 
 mkdir -p $PROJECT_NAME
-rm -rf ${BASEPATH}/${PROJECT_DIR}
-cd $PROJECT_NAME
-git clone ${GIT_CLONE_ADDR} 
-
-
-if [ X"$?" == X"0" ];then
-    echo "[INFO] Git clone ${PROJECT_NAME} successfully"
-    if [ `cd ${BASEPATH}/${PROJECT_DIR} && git tag -v ${HISTORY_TAG} 2>/dev/null | grep object | wc -l` -eq 0 ];then   
-	    echo "[ERROR] `date '+%Y-%m-%d %H:%M:%S'` - Not found tag ${HISTORY_TAG} in project ${PROJECT_NAME}." >> ${BASEPATH}/build_result.log
-	    exit 1
+for ((i=1;i<=3;i++));do
+    rm -rf ${BASEPATH}/${PROJECT_DIR}
+    cd $PROJECT_NAME
+    git clone ${GIT_CLONE_ADDR}
+    if [ X"$?" == X"0" ];then
+        echo "[INFO] Git clone ${PROJECT_NAME} successfully."
+        if [ `cd ${BASEPATH}/${PROJECT_DIR} && git tag -v ${HISTORY_TAG} 2>/dev/null | grep object | wc -l` -eq 0 ];then
+    	 echo "[ERROR] `date '+%Y-%m-%d %H:%M:%S'` - Not found tag ${HISTORY_TAG} in project ${PROJECT_NAME}." >> ${BASEPATH}/build_result.log
+    	 exit 1
+        fi
+		break
     fi
-else
-    echo "[ERROR] `date '+%Y-%m-%d %H:%M:%S'` - Clone project ${PROJECT_NAME} failed." >> ${BASEPATH}/build_result.log
-    exit 1
-fi
+	while [[ $i -eq 3 ]]; do
+        echo "[ERROR] `date '+%Y-%m-%d %H:%M:%S'` - Clone project ${PROJECT_NAME} failed." >> ${BASEPATH}/build_result.log
+        exit 1
+    done
+done
 
 REGION_TAG=`echo ${HISTORY_TAG} | awk -F"_" '{print "'${REGION}'_"$NF}'`
 IMAGE=${DR}/${PROJECT_NAME}:${REGION_TAG}
@@ -61,23 +64,28 @@ fi
 HERECOMMENT
 
 echo "[INFO]-Begin to build image ${IMAGE}"
-bash $EXEC_BUILD_SCRIPT
-
-if [ X"$?" == X"0" -a X"`docker images -q $IMAGE | wc -l`" == X"1" ]; then
-    echo "[INFO] `date '+%Y-%m-%d %H:%M:%S'` - Build image ${IMAGE} successfully." >> ${BASEPATH}/build_result.log
-    echo "[INFO] Clear the temp branch now"
-    git checkout -- ${SCRIPT_FILE}
-    git checkout master
-    git branch -D branch_${HISTORY_TAG}
-    docker push $IMAGE
-    if [ X"$?" == X"0" ]; then
-        echo "[INFO] Push $image successfully"
-	    docker rmi $IMAGE
-	    rm -fr ${BASEPATH}/${PROJECT_NAME}
-    else
-        echo "[WARNING] `date '+%Y-%m-%d %H:%M:%S'` Push image ${IMAGE} to docker-registry ${DR} failed." >> ${BASEPATH}/build_result.log
+for ((i=1;i<=3;i++));do
+    bash $EXEC_BUILD_SCRIPT
+    
+    if [ X"$?" == X"0" -a X"`docker images -q $IMAGE | wc -l`" == X"1" ]; then
+        echo "[INFO] `date '+%Y-%m-%d %H:%M:%S'` - Build image ${IMAGE} successfully." >> ${BASEPATH}/build_result.log
+        echo "[INFO] Clear the temp branch now"
+        git checkout -- ${SCRIPT_FILE} *Dockerfile*
+        git checkout master
+        git branch -D branch_${HISTORY_TAG}
+        docker push $IMAGE
+        if [ X"$?" == X"0" ]; then
+            echo "[INFO] Push $image successfully"
+    	docker rmi $IMAGE
+    	rm -fr ${BASEPATH}/${PROJECT_NAME}
+        else
+            echo "[WARNING] Push image ${IMAGE} to docker-registry ${DR} failed." >> ${BASEPATH}/build_result.log
+        fi
+		break
     fi
-else
-    echo "[ERROR] `date '+%Y-%m-%d %H:%M:%S'` - Build image ${IMAGE} failed." >> ${BASEPATH}/build_result.log
-fi
+	while [[ $i -eq 3 ]]; do
+        echo "[ERROR] `date '+%Y-%m-%d %H:%M:%S'` - Build image ${IMAGE} failed." >> ${BASEPATH}/build_result.log
+		exit 1
+    done
+done
 
