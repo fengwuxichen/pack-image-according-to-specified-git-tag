@@ -15,7 +15,7 @@ GIT_CLONE_ADDR=`awk -F"|" '{if($1=="'${PROJECT_NAME}'") print$2}' project_info`
 SCRIPT_FILE=`awk -F"|" '{if($1=="'${PROJECT_NAME}'") print$3}' project_info`
 PROJECT_DIR=`awk -F"|" '{if($1=="'${PROJECT_NAME}'") print "'${PROJECT_NAME}'""/"$4}' project_info`
 if [ X${GIT_CLONE_ADDR} == X"" -o X${SCRIPT_FILE} == X"" -o X${PROJECT_DIR} == X"" ];then
-    echo "[ERROR] Failed to retrieve project ${PROJECT_NAME} in configuration file: project_info."
+    echo "[ERROR] `date '+%Y-%m-%d %H:%M:%S'` - Failed to retrieve project ${PROJECT_NAME} in configuration file: project_info." >> ${BASEPATH}/build_result.log
     exit 1
 fi
 
@@ -28,11 +28,11 @@ git clone ${GIT_CLONE_ADDR}
 if [ X"$?" == X"0" ];then
     echo "[INFO] Git clone ${PROJECT_NAME} successfully"
     if [ `cd ${BASEPATH}/${PROJECT_DIR} && git tag -v ${HISTORY_TAG} 2>/dev/null | grep object | wc -l` -eq 0 ];then   
-	 echo "[ERROR] No such tag"
-	 exit 1
+	    echo "[ERROR] `date '+%Y-%m-%d %H:%M:%S'` - Not found tag ${HISTORY_TAG} in project ${PROJECT_NAME}." >> ${BASEPATH}/build_result.log
+	    exit 1
     fi
 else
-    echo "[ERROR] No such project or git clone failed"
+    echo "[ERROR] `date '+%Y-%m-%d %H:%M:%S'` - Clone project ${PROJECT_NAME} failed." >> ${BASEPATH}/build_result.log
     exit 1
 fi
 
