@@ -75,7 +75,7 @@ if [ X"$?" == X"0" -a X"`docker images -q $IMAGE | wc -l`" == X"1" ]; then
 	    docker rmi $IMAGE
 	    rm -fr ${BASEPATH}/${PROJECT_NAME}
     else
-        echo "[ERROR] Push image ${IMAGE} to docker-registry ${DR} failed"
+        echo "[WARNING] `date '+%Y-%m-%d %H:%M:%S'` Push image ${IMAGE} to docker-registry ${DR} failed." >> ${BASEPATH}/build_result.log
     fi
 else
     echo "[ERROR] `date '+%Y-%m-%d %H:%M:%S'` - Build image ${IMAGE} failed." >> ${BASEPATH}/build_result.log
