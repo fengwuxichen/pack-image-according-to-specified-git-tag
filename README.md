@@ -1,2 +1,2 @@
-根据指定的tag号，克隆项目源码，并根据原有的.gitlab-ci.yml获取原有的生产环境或其他环境的打镜像方式，打docker镜像并上传到私有仓库。
+根据指定的tag号，从gitlab克隆项目源码，并根据原有的.gitlab-ci.yml获取原有的生产环境或其他环境的打镜像方式，打docker镜像并上传到私有仓库。
 project_info是配置文件，配置：PROJECT_NAME|GIT_CLONE_ADDR|SCRIPT_FILE|PROJECT_DIR分别为项目名、git克隆地址、需要执行的打包脚本、克隆下来的目录名
